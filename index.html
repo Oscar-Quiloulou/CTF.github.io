@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custshell // SYSTEM_OFFLINE</title>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --term-green: #00ff41;
+            --term-dim: #008f11;
+            --alert-red: #ff003c;
+            --cyan: #00f3ff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--term-green);
+            font-family: 'Courier New', Courier, monospace;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Effet Matrix en arrière-plan */
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0.25;
+        }
+
+        /* Effet scanlines CRT */
+        body::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        /* Conteneur principal (Terminal) */
+        .terminal {
+            position: relative;
+            z-index: 2;
+            width: 90%;
+            max-width: 700px;
+            background: rgba(10, 15, 10, 0.88);
+            border: 1px solid var(--term-green);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.2), inset 0 0 15px rgba(0, 255, 65, 0.1);
+            padding: 25px;
+            border-radius: 4px;
+        }
+
+        .terminal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--term-dim);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            color: var(--term-dim);
+        }
+
+        .dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--term-dim);
+        }
+        .dot:first-child { background: var(--alert-red); }
+
+        /* Titre avec effet Glitch */
+        h1 {
+            font-size: 2.8rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+            position: relative;
+            display: inline-block;
+            text-shadow: 0 0 8px var(--term-green);
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: rgba(255, 0, 60, 0.15);
+            border: 1px solid var(--alert-red);
+            color: var(--alert-red);
+            padding: 4px 10px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            animation: blink 1.5s infinite;
+        }
+
+        .console-output {
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            min-height: 90px;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.1em;
+            background-color: var(--term-green);
+            vertical-align: middle;
+            animation: blink 0.8s infinite;
+        }
+
+        /* Boutons */
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .btn {
+            text-decoration: none;
+            padding: 12px 22px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 1px solid var(--term-green);
+            color: var(--term-green);
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: var(--term-green);
+            color: var(--bg-color);
+            box-shadow: 0 0 15px var(--term-green);
+        }
+
+        .btn-level {
+            border-color: var(--cyan);
+            color: var(--cyan);
+        }
+
+        .btn-level:hover {
+            background: var(--cyan);
+            color: var(--bg-color);
+            box-shadow: 0 0 15px var(--cyan);
+        }
+
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        @media (max-width: 500px) {
+            h1 { font-size: 2rem; }
+            .btn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="matrix"></canvas>
+
+    <div class="terminal">
+        <div class="terminal-header">
+            <div class="dots">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </div>
+            <span>root@custshell:~# ./init_server.sh</span>
+        </div>
+
+        <h1>Custshell</h1>
+        <br>
+        <div class="status-badge">[⚠] SYSTÈME EN CONSTRUCTION</div>
+
+        <div class="console-output" id="typewriter"></div>
+
+        <div class="actions">
+            <a href="https://discord.com/invite/bvezgZYqdA" target="_blank" rel="noopener noreferrer" class="btn">
+                &gt; Rejoindre le Discord
+            </a>
+            <a href="niv1.html" class="btn btn-level">
+                &gt; Accéder à niv1.html
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // --- Effet machine à écrire ---
+        const lines = [
+            "> Initialisation du noyau Custshell...",
+            "> Statut : Déploiement de l'infrastructure en cours.",
+            "> Rejoignez notre réseau Discord pour suivre l'avancement ou lancez le premier niveau."
+        ];
+        
+        const target = document.getElementById("typewriter");
+        let lineIndex = 0;
+        let charIndex = 0;
+
+        function typeEffect() {
+            if (lineIndex < lines.length) {
+                if (charIndex < lines[lineIndex].length) {
+                    target.innerHTML = lines.slice(0, lineIndex).join("<br>") + 
+                                       (lineIndex > 0 ? "<br>" : "") + 
+                                       lines[lineIndex].substring(0, charIndex + 1) + 
+                                       '<span class="cursor"></span>';
+                    charIndex++;
+                    setTimeout(typeEffect, 25);
+                } else {
+                    lineIndex++;
+                    charIndex = 0;
+                    setTimeout(typeEffect, 300);
+                }
+            }
+        }
+        typeEffect();
+
+        // --- Effet pluie Matrix ---
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const chars = '01CUSTSHELL$#@%&*<>';
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.08)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00ff41';
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars.charAt(Math.floor(Math.random() * chars.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 45);
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
